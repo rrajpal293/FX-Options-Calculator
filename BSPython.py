@@ -25,14 +25,14 @@ def do_all_calcs():
     # Do all calculations
 	o = Option_Vals(n, f, x, v, rf, rd, t, isCall)
 	o.do_all_calcs()
-	p_option = o.getPct()
-	p_dol = o.getPrc()
-	Delta = o.getDelta()
-	Theta = o.getTheta()
-	Rho = o.getRho()
-	Hedge = o.getHedge()
-	Gamma = o.getGamma()
-	Vega = o.getVega()
+	p_option = o.OptPct
+	p_dol = o.OptPrc
+	delta = o.Delta
+	theta = o.Theta
+	rho = o.Rho
+	hedge = o.Hedge
+	gamma = o.Gamma
+	vega = o.Vega
 
 	#Paste Values to spreadsheet
 	wb.sheets[0].range("Opt_prc_pct").value = p_option * 100
@@ -40,21 +40,22 @@ def do_all_calcs():
 	wb.sheets[0].range("Opt_prc_pct").NumberFormat = "_(* #,##0.000_);_(* (#,##0.000);_(* ""-""??_);_(@_)"
 	wb.sheets[0].range("Opt_prc_not").value = p_dol
 	wb.sheets[0].range("Opt_not_label").value  = "Option Price"
-	wb.sheets[0].range("Opt_theta").value = Theta
+	wb.sheets[0].range("Opt_theta").value = theta
 	wb.sheets[0].range("Opt_theta").NumberFormat = "_(* #,##0.000_);_(* (#,##0.000);_(* ""-""??_);_(@_)"
 	wb.sheets[0].range("Theta_label").value = "Theta"
-	wb.sheets[0].range("Opt_delta").value = Delta
+	wb.sheets[0].range("Opt_delta").value = delta
 	wb.sheets[0].range("Opt_delta").NumberFormat = "_(* #,##0.000_);_(* (#,##0.000);_(* ""-""??_);_(@_)"
 	wb.sheets[0].range("Delta_label").value = "Delta"
-	wb.sheets[0].range("Opt_gamma").value = Gamma
+	wb.sheets[0].range("Opt_gamma").value = gamma
 	wb.sheets[0].range("Gamma_label").value = "Gamma"
-	wb.sheets[0].range("Opt_rho").value = Rho
+	wb.sheets[0].range("Opt_rho").value = rho
 	wb.sheets[0].range("Opt_rho").NumberFormat = "_(* #,##0.000_);_(* (#,##0.000);_(* ""-""??_);_(@_)"
 	wb.sheets[0].range("Rho_label").value = "Rho"
-	wb.sheets[0].range("Opt_vega").value = Vega
+	wb.sheets[0].range("Opt_vega").value = vega
 	wb.sheets[0].range("Vega_label").value = "Vega"
-	wb.sheets[0].range("Hedge").value = Hedge
+	wb.sheets[0].range("Hedge").value = hedge
 	wb.sheets[0].range("Hedge_label").value = "Hedge (USD)"
+
 
 
 
