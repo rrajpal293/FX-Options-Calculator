@@ -16,6 +16,9 @@ class Option_Vals():
 	rd = None
 	t = None
 
+	# intermediate values
+	_intermediates = None
+
 	# Outputs
 	p_option = None
 	p_dol = None
@@ -28,15 +31,16 @@ class Option_Vals():
 	_vega = None
 
 	def __init__(self, notional, forward, strike, volatility, r_f, r_d, t, call):
-		self.Notional = notional
-		self.Forward = forward
-		self.Strike = strike
-		self.Volatility = volatility
-		self.ForeignRate = r_f
-		self.DomesticRate = r_d
-		self.isCall = call
-		self.TimeExp = t
-		self.Spot = forward * exp((r_f - r_d) * t)
+		self.n = notional
+		self.f = forward
+		self.x = strike
+		self.v = volatility
+		self.rf = r_f
+		self.rd = r_d
+		self._isCall = call
+		self.t = t
+		self.s0 = forward * exp((r_f - r_d) * t)
+		self._intermediates = self.calcIntermediates()
 
 	@property
 	def isCall(self):
@@ -61,6 +65,7 @@ class Option_Vals():
 	@Spot.setter
 	def Spot(self, spot):
 		self.s0 = spot
+		self._intermediates = self.calcIntermediates()
 
 	@property
 	def Forward(self):
@@ -77,6 +82,7 @@ class Option_Vals():
 	@Strike.setter
 	def Strike(self, strike):
 		self.x = strike
+		self._intermediates = self.calcIntermediates()
 
 	@property
 	def Volatility(self):
@@ -85,6 +91,7 @@ class Option_Vals():
 	@Volatility.setter
 	def Volatility(self, volatility):
 		self.v = volatility
+		self._intermediates = self.calcIntermediates()
 
 	@property
 	def ForeignRate(self):
@@ -93,6 +100,7 @@ class Option_Vals():
 	@ForeignRate.setter
 	def ForeignRate(self, r_f):
 		self.rf = r_f
+		self._intermediates = self.calcIntermediates()
 
 	@property
 	def DomesticRate(self):
@@ -101,6 +109,7 @@ class Option_Vals():
 	@DomesticRate.setter
 	def DomesticRate(self, r_d):
 		self.rd = r_d
+		self._intermediates = self.calcIntermediates()
 
 	@property
 	def TimeExp(self):
@@ -109,6 +118,7 @@ class Option_Vals():
 	@TimeExp.setter
 	def TimeExp(self, t_exp):
 		self.t= t_exp
+		self._intermediates = self.calcIntermediates()
 	
 	@property
 	def OptPct(self):
@@ -174,6 +184,9 @@ class Option_Vals():
 	def Hedge(self, hedge):
 		self._hedge = hedge
 
+	def getIntermediates(self):
+		return self._intermediates
+
 	def calcIntermediates(self):
 		s0 = self.Spot
 		x = self.Strike
@@ -203,13 +216,14 @@ class Option_Vals():
 		return opt
 
 
-	def calc_pct(self, o):
+	def calc_pct(self):
 		s0 = self.Spot
 		f = self.Forward
 		x = self.Strike
 		rd = self.DomesticRate
 		t = self.TimeExp
 		opt_isCall = self.isCall
+		o = self.getIntermediates()
 
 		if opt_isCall:
 			p = (exp(-rd * t) * (f * o["N_d1"] - x * o["N_d2"])) / s0
@@ -217,10 +231,11 @@ class Option_Vals():
 			p = (exp(-rd * t) * (x * o["N_minusd2"] - f * o["N_minusd1"])) / s0
 		self.OptPct  = p
 
-	def calc_prc(self, o):
+	def calc_prc(self):
 		self.OptPrc = self.Notional * self.OptPct
 		
-	def calc_delta(self, o):
+	def calc_delta(self, isMktConvention = True):
+		o = self.getIntermediates()
 		rf = self.ForeignRate
 		t = self.TimeExp
 		opt_isCall = self.isCall
@@ -230,7 +245,11 @@ class Option_Vals():
 		else:
 			self.Delta = exp(-rf * t) * (o["N_d1"] - 1)
 
-	def calc_theta(self, o):
+		if isMktConvention:
+			self.Delta = self.Delta - self.OptPct
+
+
+	def calc_theta(self):
 		s0 = self.Spot
 		x = self.Strike
 		v = self.Volatility
@@ -238,82 +257,98 @@ class Option_Vals():
 		rd = self.DomesticRate
 		t = self.TimeExp
 		opt_isCall = self.isCall
+		o = self.getIntermediates()
 
 		if opt_isCall:
 			self.Theta = (-s0 * o["N_prime_d1"] * v * exp(-rf * t) / (2 * sqrt(t)) + rf * s0 * o["N_d1"] * exp(-rf * t) - rd * x * exp(-rd * t) * o["N_d2"]) / 100
 		else:
 			self.Theta = (-s0 * o["N_prime_d1"] * v * exp(-rf * t) / (2 * sqrt(t)) - rf * s0 * o["N_minusd1"] * exp(-rf * t) + rd * x * exp(-rd * t) * o["N_minusd2"]) / 100
 
-	def calc_rho(self, o):
+	def calc_rho(self):
 		x = self.Strike
 		rd = self.DomesticRate
 		t = self.TimeExp
 		opt_isCall = self.isCall
+		o = self.getIntermediates()
 
 		if opt_isCall:
 			self.Rho = x * t * exp(-rd * t) * o["N_d2"] / 100
 		else:
 			self.Rho = -x * t * exp(-rd * t) * o["N_minusd2"] / 100
 
-	def calc_gamma(self, o):
 
+	def calc_gamma(self, isMktConvention = True):
+		o = self.getIntermediates()
 		self.Gamma = self.Notional * o["N_prime_d1"] * exp(-self.ForeignRate * self.TimeExp) / (self.Spot * self.Volatility * sqrt(self.TimeExp))
+		if isMktConvention:
+			self.Gamma = self.Gamma * self.Spot / 100
 
-	def calc_vega(self, o):
+	def calc_vega(self,isMktConvention = True):
+		o = self.getIntermediates()
 		self.Vega = 100 * self.Spot * sqrt(self.TimeExp) * o["N_prime_d1"] * exp(-self.ForeignRate * self.TimeExp)
+		if isMktConvention:
+			oldOptPrc = self.OptPct
+			oldVol = self.Volatility
+			self.Volatility = oldVol + 0.01
+			self.calc_pct()
+			newOptPrc = self.OptPct
+			self.Volatility = oldVol
+			self.OptPct = oldOptPrc
+			self.Vega = self.Notional * (newOptPrc- oldOptPrc)
 
-	def calc_hedge(self, o):
+	def calc_hedge(self):
 		self.Hedge = -self.Notional * self.Delta
 
-	def Get_OptionItems_BS_Theoretical(self):
-		o = self.calcIntermediates()
+
+	# def Get_OptionItems_BS_Theoretical(self):
+	# 	o = self.getIntermediates()
 
     
-    	# Calculate Greeks (formulas do not depend on option type)
+ #    	# Calculate Greeks (formulas do not depend on option type)
 
-		self.calc_gamma(o)
-		self.calc_vega(o)
-		self.calc_delta(o)
-		self.calc_theta(o)
-		self.calc_rho(o)
-		self.calc_pct(o)
-		self.calc_prc(o)
-		self.calc_hedge(o)
+	# 	self.calc_gamma(False)
+	# 	self.calc_vega(False)
+	# 	self.calc_delta(False)
+	# 	self.calc_theta()
+	# 	self.calc_rho()
+	# 	self.calc_pct()
+	# 	self.calc_prc()
+	# 	self.calc_hedge(False)
     
-    	# Calculate option value and Greeks
+ #    	# Calculate option value and Greeks
 
-		opt = dict()
-		opt["opt_price"] = self.OptPct
-		opt["opt_dol"] = self.OptPrc
-		opt["delta"] = self.Delta
-		opt["gamma"] = self.Gamma
-		opt["rho"] = self.Rho
-		opt["vega"] = self.Vega
-		opt["theta"] = self.Theta
-		return opt
+	# 	opt = dict()
+	# 	opt["opt_price"] = self.OptPct
+	# 	opt["opt_dol"] = self.OptPrc
+	# 	opt["delta"] = self.Delta
+	# 	opt["gamma"] = self.Gamma
+	# 	opt["rho"] = self.Rho
+	# 	opt["vega"] = self.Vega
+	# 	opt["theta"] = self.Theta
+	# 	return opt
 
 
 
-	def do_all_calcs(self):
+	# def do_all_calcs(self):
 
-    	# Do all calculations
-		o = self.Get_OptionItems_BS_Theoretical()
-		oldSpot = self.Spot
-		self.Spot = oldSpot/0.99
-		o_new_spot = self.Get_OptionItems_BS_Theoretical()
-		self.Spot = oldSpot
-		oldVol = self.Volatility
-		self.Volatility = oldVol + 0.01
-		o_new_vol = self.Get_OptionItems_BS_Theoretical()
-		self.Volatility = oldVol
-		self.OptPct = o["opt_price"]
-		self.OptPrc = o["opt_dol"]
-		d_option = o["delta"]
-		self.Theta = o["theta"]
-		self.Rho = o["rho"]
-		self.Delta = d_option - self.OptPct
-		self.Hedge = -self.Notional * self.Delta
-		d_option_new = o_new_spot["delta"]
-		self.Gamma = o["gamma"] * self.Spot / 100
-		p_option_new = o_new_vol["opt_price"]
-		self.Vega = self.Notional * (p_option_new - self.OptPct)
+ #    	# Do all calculations
+	# 	o = self.Get_OptionItems_BS_Theoretical()
+	# 	oldSpot = self.Spot
+	# 	self.Spot = oldSpot/0.99
+	# 	o_new_spot = self.Get_OptionItems_BS_Theoretical()
+	# 	self.Spot = oldSpot
+	# 	oldVol = self.Volatility
+	# 	self.Volatility = oldVol + 0.01
+	# 	o_new_vol = self.Get_OptionItems_BS_Theoretical()
+	# 	self.Volatility = oldVol
+	# 	self.OptPct = o["opt_price"]
+	# 	self.OptPrc = o["opt_dol"]
+	# 	d_option = o["delta"]
+	# 	self.Theta = o["theta"]
+	# 	self.Rho = o["rho"]
+	# 	self.Delta = d_option - self.OptPct
+	# 	self.Hedge = -self.Notional * self.Delta
+	# 	d_option_new = o_new_spot["delta"]
+	# 	self.Gamma = o["gamma"] * self.Spot / 100
+	# 	p_option_new = o_new_vol["opt_price"]
+	# 	self.Vega = self.Notional * (p_option_new - self.OptPct)
