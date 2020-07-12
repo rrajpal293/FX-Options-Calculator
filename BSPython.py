@@ -24,7 +24,17 @@ def do_all_calcs():
     
     # Do all calculations
 	o = Option_Vals(n, f, x, v, rf, rd, t, isCall)
-	o.do_all_calcs()
+	# o.calcIntermediates()
+	#o.do_all_calcs()
+	o.calc_pct()
+	o.calc_prc()
+	o.calc_delta()
+	o.calc_gamma()
+	o.calc_theta()
+	o.calc_rho()
+	o.calc_vega()
+	o.calc_hedge()
+
 	p_option = o.OptPct
 	p_dol = o.OptPrc
 	delta = o.Delta
@@ -55,7 +65,6 @@ def do_all_calcs():
 	wb.sheets[0].range("Vega_label").value = "Vega"
 	wb.sheets[0].range("Hedge").value = hedge
 	wb.sheets[0].range("Hedge_label").value = "Hedge (USD)"
-
 
 
 
