@@ -51,7 +51,7 @@ class VolSmile():
     def calc_strike(self, sigma, delta):
         # This uses the inverse normal distribution
 
-        x = self._f * exp(-sigma * sqrt(self._t) * norm.ppf(delta) + (self._rd - self._rf + (sigma**2)/2) * self._t)
+        x = self._f * exp(-sigma * sqrt(self._t) * norm.ppf(delta) + ((sigma**2)/2) * self._t)
         return x
 
     def calc_option_prices(self):
