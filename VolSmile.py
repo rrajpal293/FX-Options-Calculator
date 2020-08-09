@@ -50,8 +50,7 @@ class VolSmile():
 
     def calc_strike(self, sigma, delta):
         # This uses the inverse normal distribution
-
-        x = self._f * exp(-sigma * sqrt(self._t) * norm.ppf(delta) + ((sigma**2)/2) * self._t)
+        x = self._s0 * exp(-sigma * sqrt(self._t) * norm.ppf(delta*exp(self._rd * self._t)) + (self._rd - self._rf + (sigma**2)/2) * self._t)
         return x
 
     def calc_option_prices(self):
@@ -135,13 +134,3 @@ class VolSmile():
         plt.show()
         fig.savefig("vol_strike.png")
         plt.close(fig)
-
-
-    # def newtons_method(f, df, x, e, max_iter):
-    #     dist = abs(f(x))
-    #     it = 0
-    #     while dist > e and it < max_iter:
-    #         x = x - f(x)/df(x)
-    #         dist = abs(f(x))
-    #         it = it + 1
-    #     return x
