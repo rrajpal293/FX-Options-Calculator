@@ -16,4 +16,4 @@ sigma75 = 0.0739
 vs = VolSmile(atm, sigma25, sigma75, t, s0, rd, rf)
 vs.plot()
 call_prices, strikes = vs.calc_option_prices()
-print('The probability of spot being higher than 105.8 in 3 months is ' + str(vs.calc_prob(105)))
+print('The probability of spot being higher than 105 in 3 months is ' + str(vs.calc_prob(105)))
