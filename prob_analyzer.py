@@ -56,3 +56,8 @@ for i in range (0,len(tenors)):
         vs = VolSmile(atm[i], v25[i], v75[i], tenors[i], s0, rd[i], rf[i])
         probs[j][i] = vs.calc_prob(spots[j])
         print(vs.calc_prob(spots[j]))
+            
+rounded_spots = np.round(spots,2)
+rounded_spots = rounded_spots[::-1]
+prob_df = pd.DataFrame(probs, columns= ['01M','02M','03M','06M','12M'], index=rounded_spots)
+print("USD/CNY Probability Analyzer", prob_df, sep='\n')
