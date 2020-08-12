@@ -5,9 +5,9 @@ x75 = [6.32, 6.32, 6.32, 6.31, 6.30]
 rd = [0.0313, 0.0263, 0.0235, 0.0207, 0.0183] 
 rf = [0.0044, 0.0045, 0.0046, 0.005, 0.0055] 
 tenors = [1.0/12, 1.0/6, 1.0/4, 1.0/2, 1] 
-v25 = np.zeros((5,1))
-v75 = np.zeros((5,1))
-atm = np.zeros((5,1))
+v25 = [0.024, 0.025, 0.023, 0.0305, 0.0385]
+v75 = [0.018, 0.0185, 0.016, 0.0215, 0.0255]
+atm = [0.02, 0.0205, 0.021, 0.024, 0.029]
 probs = np.zeros((25,5))
 
 
@@ -19,7 +19,7 @@ def get_zero_prob_index(vs, spot):
 	while notFound:
 		p_lower = 1 - vs.calc_prob(lower)
 		p_upper = vs.calc_prob(upper)
-		if p_lower == 0 or p_upper == 0:
+		if p_lower <= 0.005 or p_upper <= 0.005:
 			notFound = False
 		else:
 			upper = upper + increment
@@ -38,14 +38,14 @@ def calc_vol(strike, delta, t, rd, rf, s0):
     return x
 
     
-def populate_delta_vols_from_delta_strikes():
-    for idx_tenor in range(0,5):
-        v25[idx_tenor] = calc_vol(x25[idx_tenor], 0.25, tenors[idx_tenor], rd[idx_tenor], rf[idx_tenor], s0)
-        v75[idx_tenor] = calc_vol(x75[idx_tenor], 0.75, tenors[idx_tenor], rd[idx_tenor], rf[idx_tenor], s0)
-        atm[idx_tenor] = calc_vol(x50[idx_tenor], 0.5, tenors[idx_tenor], rd[idx_tenor], rf[idx_tenor], s0)
+# def populate_delta_vols_from_delta_strikes():
+#     for idx_tenor in range(0,5):
+#         v25[idx_tenor] = calc_vol(x25[idx_tenor], 0.25, tenors[idx_tenor], rd[idx_tenor], rf[idx_tenor], s0)
+#         v75[idx_tenor] = calc_vol(x75[idx_tenor], 0.75, tenors[idx_tenor], rd[idx_tenor], rf[idx_tenor], s0)
+#         atm[idx_tenor] = calc_vol(x50[idx_tenor], 0.5, tenors[idx_tenor], rd[idx_tenor], rf[idx_tenor], s0)
 
         
-populate_delta_vols_from_delta_strikes()   
+# populate_delta_vols_from_delta_strikes()   
 vs = VolSmile(atm[4], v25[4], v75[4], tenors[4], s0, rd[4], rf[4])
 sLower = get_zero_prob_index(vs, s0)
 sUpper = s0 + (s0 - sLower)
