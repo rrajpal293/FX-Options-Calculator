@@ -50,7 +50,10 @@ class VolSmile():
 
     def calc_strike(self, sigma, delta):
         # This uses the inverse normal distribution
+
         x = self._s0 * exp(-sigma * sqrt(self._t) * norm.ppf(delta*exp(self._rd * self._t)) + (self._rd - self._rf + (sigma**2)/2) * self._t)
+        if math.isnan(x) and delta*exp(self._rd * self._t) > 1:
+            x = self._s0 * exp(-sigma * sqrt(self._t) * norm.ppf(1) + (self._rd - self._rf + (sigma**2)/2) * self._t)
         return x
 
     def calc_option_prices(self):
@@ -77,7 +80,7 @@ class VolSmile():
             return 0
         if strikes[len(strikes)-1] <= strike:
             return (len(strikes) - 1)
-        for i in range(0, 99):
+        for i in range(0, len(strikes)-1):
             if strikes[i] <= strike and strike < strikes[i+1]:
                 return i
     
@@ -87,9 +90,13 @@ class VolSmile():
         vols = [0] * 100; # initialize matrix of zeros
         for i in range(0, 100):
             vols[i] = self.malz_quadratic(deltas[i])
+            if (i > 0) and (vols[i] <= 0 or vols[i] == None):
+                vols[i] = vols[i-1]
         for i in range(0, 100):
             strikes[i] = self.calc_strike(vols[i], deltas[i])
+
         idx = self.search_strike(strikes, strike)
+        
         return vols[idx]
 
 
